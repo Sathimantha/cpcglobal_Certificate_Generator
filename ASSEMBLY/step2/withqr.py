@@ -10,7 +10,8 @@ result_img = Image.new('RGBA', jpeg_img.size, (255, 255, 255, 0))
 result_img.paste(jpeg_img, (0, 0))
 
 # Paste the PNG image onto the new image at the top-right corner
-result_img.paste(png_img, (jpeg_img.width - png_img.width, 0), mask=png_img)
+result_img.paste(png_img, (jpeg_img.width - png_img.width - 90, 90), mask=png_img)
 
+result_img = result_img.convert('RGB')
 # Save the resulting image
-result_img.save('output.png')
+result_img.save('output.jpg','JPEG')
