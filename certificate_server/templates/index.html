@@ -1,64 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Person Search</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        #personInfo, #confirmationSection {
-            margin-top: 20px;
-        }
-    </style>
+    <!-- ... (head content remains the same) ... -->
 </head>
 <body>
-    <h1>Person Search</h1>
-    <p>Enter the person's name, student ID, or email address:</p>
-    <input type="text" id="searchInput" placeholder="Enter name, student ID, or email">
-    <button onclick="searchPerson()">Search</button>
-    <div id="personInfo"></div>
-    <div id="confirmationSection" style="display: none;">
-        <p>Is this information correct?</p>
-        <button onclick="generateCertificate()">Yes, generate certificate</button>
-        <button onclick="resetSearch()">No, search again</button>
-    </div>
+    <!-- ... (body content remains the same) ... -->
 
     <script>
         let currentPersonData = null;
 
         function searchPerson() {
-            const searchTerm = document.getElementById('searchInput').value;
-            fetch(`/api/person?search=${encodeURIComponent(searchTerm)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById('personInfo').innerHTML = `<p>${data.error}</p>`;
-                        document.getElementById('confirmationSection').style.display = 'none';
-                    } else {
-                        currentPersonData = data;
-                        const personHtml = `
-                            <h2>${data.full_name}</h2>
-                            <p>Student ID: ${data.student_id}</p>
-                            <p>Email: ${data.Email}</p>
-                            <p>Phone: ${data.phone_no}</p>
-                        `;
-                        document.getElementById('personInfo').innerHTML = personHtml;
-                        document.getElementById('confirmationSection').style.display = 'block';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('personInfo').innerHTML = '<p>An error occurred. Please try again.</p>';
-                    document.getElementById('confirmationSection').style.display = 'none';
-                });
+            // ... (searchPerson function remains the same) ...
         }
 
-        // ... (rest of the JavaScript functions remain the same)
+        function generateCertificate() {
+            if (!currentPersonData) {
+                alert("No person data available. Please search for a person first.");
+                return;
+            }
+
+            fetch('/api/generate_certificate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(currentPersonData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                } else {
+                    alert('Certificate generated successfully!');
+                    window.open(`/api/certificate/${currentPersonData.student_id}`, '_blank');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating the certificate.');
+            });
+        }
+
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('personInfo').innerHTML = '';
+            document.getElementById('confirmationSection').style.display = 'none';
+            currentPersonData = null;
+        }
     </script>
 </body>
 </html>
