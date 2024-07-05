@@ -6,6 +6,7 @@ from PIL import Image
 import img2pdf
 import logging
 import pandas as pd
+import argparse
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -24,6 +25,10 @@ except Exception as e:
 template_dir = os.path.abspath(os.path.dirname(__file__))
 template_dir = os.path.join(template_dir, 'templates')
 app.template_folder = template_dir
+
+# SSL certificate paths
+cert_file = '/opt/bitnami/apache/conf/bitnami/certs/server.crt'
+key_file = '/opt/bitnami/apache/conf/bitnami/certs/server.key'
 
 def obfuscate_email(email):
     if not email:
@@ -153,4 +158,15 @@ def get_certificate(student_id):
         return jsonify({"error": "Certificate not found"}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    parser = argparse.ArgumentParser(description='Run the Flask app with optional SSL.')
+    parser.add_argument('--ssl', action='store_true', help='Enable SSL')
+    args = parser.parse_args()
+
+    if args.ssl:
+        if os.path.exists(cert_file) and os.path.exists(key_file):
+            app.run(debug=True, ssl_context=(cert_file, key_file))
+        else:
+            logging.error("SSL certificates not found. Running without SSL.")
+            app.run(debug=True)
+    else:
+        app.run(debug=True)
