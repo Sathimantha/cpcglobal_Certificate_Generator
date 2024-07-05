@@ -1,1 +1,2 @@
-front_claude/generated_files/*
+certificate_server/generated_files/*
+certificate_server/__pycache__

@@ -25,6 +25,21 @@ template_dir = os.path.abspath(os.path.dirname(__file__))
 template_dir = os.path.join(template_dir, 'templates')
 app.template_folder = template_dir
 
+def obfuscate_email(email):
+    if not email:
+        return ""
+    parts = email.split('@')
+    if len(parts) != 2:
+        return email  # Return original if it's not a valid email
+    username, domain = parts
+    return f"{username[:3]}{'*' * (len(username) - 3)}@{domain}"
+
+def obfuscate_phone(phone):
+    if not phone:
+        return ""
+    phone = str(phone)  # Convert to string in case it's stored as a number
+    return f"{'*' * (len(phone) - 4)}{phone[-4:]}"
+
 def generate_certificate(student_name, student_id):
     try:
         # Certificate generation
@@ -108,6 +123,11 @@ def get_person():
         return jsonify({"error": "Person not found"}), 404
     
     person_data = person.iloc[0].to_dict()
+    
+    # Obfuscate sensitive information
+    person_data['Email'] = obfuscate_email(person_data['Email'])
+    person_data['phone_no'] = obfuscate_phone(person_data['phone_no'])
+    
     logging.info(f"Person found: {person_data}")
     return jsonify(person_data)
 
