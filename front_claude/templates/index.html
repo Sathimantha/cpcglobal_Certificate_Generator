@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #personInfo {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Person Search</h1>
+    <p>Enter the person's name, student ID, or email address:</p>
+    <input type="text" id="searchInput" placeholder="Enter name, student ID, or email">
+    <button onclick="searchPerson()">Search</button>
+    <div id="personInfo"></div>
+
+    <script>
+        function searchPerson() {
+            const searchTerm = document.getElementById('searchInput').value;
+            fetch(`/api/person?search=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('personInfo').innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        const personHtml = `
+                            <h2>${data.full_name}</h2>
+                            <p>Student ID: ${data.student_id}</p>
+                            <p>Email: ${data.Email}</p>
+                            <p>Phone: ${data.phone_no}</p>
+                            <p><a href="/api/certificate/${data.student_id}" target="_blank">View Certificate (PDF)</a></p>
+                        `;
+                        document.getElementById('personInfo').innerHTML = personHtml;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('personInfo').innerHTML = '<p>An error occurred. Please try again.</p>';
+                });
+        }
+    </script>
+</body>
+</html>
