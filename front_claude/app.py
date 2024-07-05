@@ -1,3 +1,4 @@
+from flask import Flask, request, jsonify, send_file, render_template
 import os
 import cv2
 import qrcode
@@ -5,12 +6,9 @@ from PIL import Image
 import img2pdf
 import logging
 import pandas as pd
-from flask import Flask, request, jsonify, send_file, render_template
 
-# Set up template directory
-template_dir = os.path.abspath(os.path.dirname(__file__))
-template_dir = os.path.join(template_dir, 'templates')
-app = Flask(__name__, template_folder=template_dir)
+# Initialize Flask app
+app = Flask(__name__)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +19,11 @@ try:
 except Exception as e:
     logging.error(f"Error loading Excel file: {str(e)}")
     df = None
+
+# Set up template directory
+template_dir = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(template_dir, 'templates')
+app.template_folder = template_dir
 
 def generate_certificate(student_name, student_id):
     try:
@@ -83,11 +86,7 @@ def generate_certificate(student_name, student_id):
 
 @app.route('/')
 def home():
-    try:
-        return render_template('index.html')
-    except Exception as e:
-        logging.error(f"Error rendering template: {str(e)}")
-        return f"An error occurred: {str(e)}", 500
+    return render_template('index.html')
 
 @app.route('/api/person', methods=['GET'])
 def get_person():
@@ -109,18 +108,21 @@ def get_person():
         return jsonify({"error": "Person not found"}), 404
     
     person_data = person.iloc[0].to_dict()
+    logging.info(f"Person found: {person_data}")
+    return jsonify(person_data)
+
+@app.route('/api/generate_certificate', methods=['POST'])
+def generate_certificate_api():
+    data = request.json
+    student_name = data.get('full_name')
+    student_id = str(data.get('student_id'))
     
-    # Generate certificate
-    pdf_path = generate_certificate(person_data['full_name'], str(person_data['student_id']))
+    pdf_path = generate_certificate(student_name, student_id)
     
     if pdf_path is None:
         return jsonify({"error": "Failed to generate certificate"}), 500
     
-    # Add PDF path to person_data
-    person_data['pdf_path'] = pdf_path
-    
-    logging.info(f"Person found: {person_data}")
-    return jsonify(person_data)
+    return jsonify({"message": "Certificate generated successfully", "pdf_path": pdf_path})
 
 @app.route('/api/certificate/<student_id>', methods=['GET'])
 def get_certificate(student_id):
@@ -131,10 +133,4 @@ def get_certificate(student_id):
         return jsonify({"error": "Certificate not found"}), 404
 
 if __name__ == '__main__':
-    print("Current working directory:", os.getcwd())
-    print("Contents of current directory:", os.listdir())
-    if os.path.exists('templates'):
-        print("Contents of templates directory:", os.listdir('templates'))
-    else:
-        print("templates directory not found")
     app.run(debug=True)

@@ -11,7 +11,7 @@
             margin: 0 auto;
             padding: 20px;
         }
-        #personInfo {
+        #personInfo, #confirmationSection {
             margin-top: 20px;
         }
     </style>
@@ -22,8 +22,15 @@
     <input type="text" id="searchInput" placeholder="Enter name, student ID, or email">
     <button onclick="searchPerson()">Search</button>
     <div id="personInfo"></div>
+    <div id="confirmationSection" style="display: none;">
+        <p>Is this information correct?</p>
+        <button onclick="generateCertificate()">Yes, generate certificate</button>
+        <button onclick="resetSearch()">No, search again</button>
+    </div>
 
     <script>
+        let currentPersonData = null;
+
         function searchPerson() {
             const searchTerm = document.getElementById('searchInput').value;
             fetch(`/api/person?search=${encodeURIComponent(searchTerm)}`)
@@ -31,21 +38,60 @@
                 .then(data => {
                     if (data.error) {
                         document.getElementById('personInfo').innerHTML = `<p>${data.error}</p>`;
+                        document.getElementById('confirmationSection').style.display = 'none';
                     } else {
+                        currentPersonData = data;
                         const personHtml = `
                             <h2>${data.full_name}</h2>
                             <p>Student ID: ${data.student_id}</p>
                             <p>Email: ${data.Email}</p>
                             <p>Phone: ${data.phone_no}</p>
-                            <p><a href="/api/certificate/${data.student_id}" target="_blank">View Certificate (PDF)</a></p>
                         `;
                         document.getElementById('personInfo').innerHTML = personHtml;
+                        document.getElementById('confirmationSection').style.display = 'block';
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     document.getElementById('personInfo').innerHTML = '<p>An error occurred. Please try again.</p>';
+                    document.getElementById('confirmationSection').style.display = 'none';
                 });
+        }
+
+        function generateCertificate() {
+            if (!currentPersonData) return;
+
+            fetch('/api/generate_certificate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(currentPersonData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('personInfo').innerHTML += `<p>Error: ${data.error}</p>`;
+                } else {
+                    document.getElementById('personInfo').innerHTML += `
+                        <p>Certificate generated successfully!</p>
+                        <p><a href="/api/certificate/${currentPersonData.student_id}" target="_blank">View Certificate (PDF)</a></p>
+                    `;
+                }
+                document.getElementById('confirmationSection').style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('personInfo').innerHTML += '<p>An error occurred while generating the certificate. Please try again.</p>';
+                document.getElementById('confirmationSection').style.display = 'none';
+            });
+        }
+
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('personInfo').innerHTML = '';
+            document.getElementById('confirmationSection').style.display = 'none';
+            currentPersonData = null;
         }
     </script>
 </body>
