@@ -139,13 +139,21 @@ def get_person():
 @app.route('/api/generate_certificate', methods=['POST'])
 def generate_certificate_api():
     data = request.json
+    if not data:
+        return jsonify({"error": "No JSON data provided"}), 400
+    
     student_name = data.get('full_name')
-    student_id = str(data.get('student_id'))
+    student_id = data.get('student_id')
+    
+    if not student_name or not student_id:
+        return jsonify({"error": "Missing required fields: full_name or student_id"}), 400
+    
+    student_id = str(student_id)
     
     pdf_path = generate_certificate(student_name, student_id)
     
     if pdf_path is None:
-        return jsonify({"error": "Failed to generate certificate"}), 500
+        return jsonify({"error": "Failed to generate certificate. Check server logs for details."}), 500
     
     return jsonify({"message": "Certificate generated successfully", "pdf_path": pdf_path})
 
@@ -158,15 +166,15 @@ def get_certificate(student_id):
         return jsonify({"error": "Certificate not found"}), 404
 
 if __name__ == '__main__':
-       parser = argparse.ArgumentParser(description='Run the Flask app with optional SSL.')
-       parser.add_argument('--ssl', action='store_true', help='Enable SSL')
-       args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Run the Flask app with optional SSL.')
+    parser.add_argument('--ssl', action='store_true', help='Enable SSL')
+    args = parser.parse_args()
 
-       if args.ssl:
-           if os.path.exists(cert_file) and os.path.exists(key_file):
-               app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=(cert_file, key_file))
-           else:
-               logging.error("SSL certificates not found. Running without SSL.")
-               app.run(host='0.0.0.0', port=5000, debug=True)
-       else:
-           app.run(host='0.0.0.0', port=5000, debug=True)
+    if args.ssl:
+        if os.path.exists(cert_file) and os.path.exists(key_file):
+            app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=(cert_file, key_file))
+        else:
+            logging.error("SSL certificates not found. Running without SSL.")
+            app.run(host='0.0.0.0', port=5000, debug=True)
+    else:
+        app.run(host='0.0.0.0', port=5000, debug=True)
