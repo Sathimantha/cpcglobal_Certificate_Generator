@@ -1,1 +1,1 @@
-rm -rf /generated_files/*
+sudo rm -rf generated_files/*
