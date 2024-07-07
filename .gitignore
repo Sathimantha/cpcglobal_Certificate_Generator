@@ -1,2 +1,4 @@
 certificate_server/generated_files/*
 certificate_server/__pycache__
+scrap.txt
+certificate_downloads.xlsx
