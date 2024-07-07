@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, render_template
+from flask import Flask, request, jsonify, send_file, render_template, abort
 import os
 import cv2
 import qrcode
@@ -38,6 +38,10 @@ key_file = '/opt/bitnami/apache/conf/bitnami/certs/server.key'
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 
 @app.route('/api/person', methods=['GET'])
 def get_person():
@@ -96,12 +100,17 @@ def get_certificate(student_id):
     else:
         return jsonify({"error": "Certificate not found"}), 404
 
+@app.errorhandler(404)
+def not_found_error(error):
+    logging.info(f"404 Error: {request.url}")
+    return jsonify(error="Not Found"), 404
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     # Log the error
     app.logger.error(f"Unhandled exception: {str(e)}")
     # Return JSON instead of HTML for HTTP errors
-    return jsonify(error=str(e)), 500
+    return jsonify(error="Internal Server Error"), 500
 
 if __name__ == '__main__':
     try:
