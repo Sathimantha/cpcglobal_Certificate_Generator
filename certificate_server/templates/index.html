@@ -1,16 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ... (head content remains the same) ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #confirmationSection {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <!-- ... (body content remains the same) ... -->
+    <h1>Certificate Verification</h1>
+    
+    <div>
+        <input type="text" id="searchInput" placeholder="Enter Student ID, Full Name, or Email">
+        <button onclick="searchPerson()">Search</button>
+        <button onclick="resetSearch()">Reset</button>
+    </div>
+
+    <div id="personInfo"></div>
+
+    <div id="confirmationSection">
+        <h2>Confirm Certificate Generation</h2>
+        <p>Are you sure you want to generate a certificate for this person?</p>
+        <button onclick="generateCertificate()">Generate Certificate</button>
+    </div>
 
     <script>
         let currentPersonData = null;
 
         function searchPerson() {
-            // ... (searchPerson function remains the same) ...
+            const searchTerm = document.getElementById('searchInput').value;
+            fetch(`/api/person?search=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        resetSearch();
+                    } else {
+                        displayPersonInfo(data);
+                        currentPersonData = data;
+                        document.getElementById('confirmationSection').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while searching for the person.');
+                });
+        }
+
+        function displayPersonInfo(person) {
+            const personInfoDiv = document.getElementById('personInfo');
+            personInfoDiv.innerHTML = `
+                <h2>Person Information</h2>
+                <p>Full Name: ${person.full_name}</p>
+                <p>Student ID: ${person.student_id}</p>
+                <p>Email: ${person.Email}</p>
+                <p>Phone: ${person.phone_no}</p>
+            `;
         }
 
         function generateCertificate() {
