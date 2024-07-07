@@ -3,57 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Verification</title>
+    <title>Certificate Lookup</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            line-height: 1.6;
         }
-        #confirmationSection {
-            display: none;
+        h1 {
+            color: #333;
+        }
+        #searchSection {
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            padding: 8px;
+            width: 300px;
+            font-size: 16px;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #personInfo {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
             margin-top: 20px;
+        }
+        #errorMessage {
+            color: red;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Certificate Verification</h1>
+    <h1>Certificate Lookup</h1>
     
-    <div>
+    <div id="searchSection">
         <input type="text" id="searchInput" placeholder="Enter Student ID, Full Name, or Email">
         <button onclick="searchPerson()">Search</button>
         <button onclick="resetSearch()">Reset</button>
     </div>
 
-    <div id="personInfo"></div>
-
-    <div id="confirmationSection">
-        <h2>Confirm Certificate Generation</h2>
-        <p>Are you sure you want to generate a certificate for this person?</p>
-        <button onclick="generateCertificate()">Generate Certificate</button>
-    </div>
+    <div id="personInfo" class="hidden"></div>
+    <div id="errorMessage" class="hidden"></div>
 
     <script>
-        let currentPersonData = null;
-
         function searchPerson() {
             const searchTerm = document.getElementById('searchInput').value;
             fetch(`/api/person?search=${encodeURIComponent(searchTerm)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                        alert(data.error);
-                        resetSearch();
+                        showError(data.error);
                     } else {
                         displayPersonInfo(data);
-                        currentPersonData = data;
-                        document.getElementById('confirmationSection').style.display = 'block';
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while searching for the person.');
+                    showError('An error occurred while searching. Please try again.');
                 });
         }
 
@@ -61,46 +84,27 @@
             const personInfoDiv = document.getElementById('personInfo');
             personInfoDiv.innerHTML = `
                 <h2>Person Information</h2>
-                <p>Full Name: ${person.full_name}</p>
-                <p>Student ID: ${person.student_id}</p>
-                <p>Email: ${person.Email}</p>
-                <p>Phone: ${person.phone_no}</p>
+                <p><strong>Full Name:</strong> ${person.full_name}</p>
+                <p><strong>Student ID:</strong> ${person.student_id}</p>
+                <p><strong>Email:</strong> ${person.Email}</p>
+                <p><strong>Phone:</strong> ${person.phone_no}</p>
+                <p><a href="${person.certificate_link}" target="_blank" class="download-link">Download Certificate</a></p>
             `;
+            personInfoDiv.classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
         }
 
-        function generateCertificate() {
-            if (!currentPersonData) {
-                alert("No person data available. Please search for a person first.");
-                return;
-            }
-
-            fetch('/api/generate_certificate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(currentPersonData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(`Error: ${data.error}`);
-                } else {
-                    alert('Certificate generated successfully!');
-                    window.open(`/api/certificate/${currentPersonData.student_id}`, '_blank');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while generating the certificate.');
-            });
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            document.getElementById('personInfo').classList.add('hidden');
         }
 
         function resetSearch() {
             document.getElementById('searchInput').value = '';
-            document.getElementById('personInfo').innerHTML = '';
-            document.getElementById('confirmationSection').style.display = 'none';
-            currentPersonData = null;
+            document.getElementById('personInfo').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
         }
     </script>
 </body>
