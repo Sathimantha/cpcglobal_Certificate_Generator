@@ -46,7 +46,7 @@ def toggle_caching():
 
 def get_download_stats():
     if os.path.exists(DOWNLOAD_LOG_FILE):
-        df = pd.read_excel(DOWNLOAD_LOG_FILE)
+        df = pd.read_excel(DOWNLOAD_LOG_FILE, parse_dates=['Timestamp'])
         total_downloads = len(df)
         unique_students = df['Student ID'].nunique()
         recent_downloads = len(df[df['Timestamp'] > pd.Timestamp.now() - pd.Timedelta(days=7)])
