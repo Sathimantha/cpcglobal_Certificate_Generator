@@ -1,0 +1,92 @@
+<div id="admin-dashboard">
+    <h1>Admin Dashboard</h1>
+    
+    <div class="card">
+        <h2>Certificate Download Statistics</h2>
+        <p>Total Downloads: {{ stats.total_downloads }}</p>
+        <p>Unique Students: {{ stats.unique_students }}</p>
+        <p>Downloads in Last 7 Days: {{ stats.recent_downloads }}</p>
+    </div>
+
+    <div class="card">
+        <h2>Data Management</h2>
+        <button class="button" onclick="refreshData()">Refresh Data</button>
+        <button class="button" onclick="toggleCaching()">Toggle Caching</button>
+    </div>
+
+    <div id="message" class="callout" style="display: none;"></div>
+
+    <style>
+        #admin-dashboard {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #008CBA;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+
+    <script>
+        function showMessage(message, isError = false) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = isError ? 'callout error' : 'callout success';
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function refreshData() {
+            fetch('/api/refresh_data', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    showMessage(data.message || data.error, data.error);
+                })
+                .catch(error => {
+                    showMessage('An error occurred while refreshing data.', true);
+                });
+        }
+
+        function toggleCaching() {
+            fetch('/api/toggle_caching', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    showMessage(data.message || data.error, data.error);
+                })
+                .catch(error => {
+                    showMessage('An error occurred while toggling caching.', true);
+                });
+        }
+    </script>
+</div>

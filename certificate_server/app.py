@@ -6,6 +6,7 @@ import pandas as pd
 from werkzeug.middleware.proxy_fix import ProxyFix
 from certificate_generator import generate_certificate
 from datetime import datetime
+from admin_functions import load_data, refresh_data, toggle_caching, get_download_stats
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -123,6 +124,24 @@ def get_certificate(student_id):
     log_certificate_download(student_id)
 
     return send_file(pdf_path, as_attachment=True, download_name=f"certificate_{student_id}.pdf", mimetype='application/pdf')
+
+# ... (admin routes)
+
+@app.route('/admin')
+def admin_dashboard():
+    stats = get_download_stats()
+    return render_template('admin.html', stats=stats)
+
+@app.route('/api/refresh_data', methods=['POST'])
+def api_refresh_data():
+    return refresh_data()
+
+@app.route('/api/toggle_caching', methods=['POST'])
+def api_toggle_caching():
+    return toggle_caching()
+
+# ... (admin routes)
+
 
 @app.errorhandler(404)
 def not_found_error(error):
