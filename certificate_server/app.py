@@ -12,6 +12,7 @@ from config import ADMIN_PASSWORD, SECRET_KEY
 # Initialize Flask app
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
+app.secret_key = SECRET_KEY
 
 # Enable CORS for all routes and all origins
 CORS(app)

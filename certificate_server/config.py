@@ -1,4 +1,4 @@
 # config.py
-
-ADMIN_PASSWORD = 'your_secure_password_here'
-SECRET_KEY = 'your_secret_key_here'  # Used for session management
+# Replace these after installing the program in the server environment
+ADMIN_PASSWORD = 'password'
+SECRET_KEY = 'session_key'  
