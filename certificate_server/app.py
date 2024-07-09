@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, render_template, url_for
+from flask import Flask, request, jsonify, send_file, render_template, url_for, session, redirect
 from flask_cors import CORS
 import os
 import logging
@@ -7,6 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from certificate_generator import generate_certificate
 from datetime import datetime
 from admin_functions import load_data, refresh_data, toggle_caching, get_download_stats
+from config import ADMIN_PASSWORD, SECRET_KEY
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -127,18 +128,41 @@ def get_certificate(student_id):
 
 # ... (admin routes)
 
+@app.route('/admin_login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template('admin_login.html', error="Invalid password")
+    return render_template('admin_login.html')
+
+@app.route('/admin_logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
+
 @app.route('/admin')
 def admin_dashboard():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     stats = get_download_stats()
     return render_template('admin.html', stats=stats)
 
 @app.route('/api/refresh_data', methods=['POST'])
 def api_refresh_data():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
     return refresh_data()
 
 @app.route('/api/toggle_caching', methods=['POST'])
 def api_toggle_caching():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
     return toggle_caching()
+
 
 # ... (admin routes)
 
