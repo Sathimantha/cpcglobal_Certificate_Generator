@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file, render_template, url_for
+from flask_cors import CORS
 import os
 import logging
 import pandas as pd
@@ -9,6 +10,9 @@ from datetime import datetime
 # Initialize Flask app
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
+
+# Enable CORS for all routes and all origins
+CORS(app)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
