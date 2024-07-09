@@ -6,7 +6,8 @@ import pandas as pd
 from werkzeug.middleware.proxy_fix import ProxyFix
 from certificate_generator import generate_certificate
 from datetime import datetime
-from admin_functions import load_data, refresh_data, toggle_caching, get_download_stats
+from admin_functions import (load_data, refresh_data, toggle_caching, get_download_stats, 
+                             get_log_file_path, get_generated_files_stats)
 from config import ADMIN_PASSWORD, SECRET_KEY
 
 # Initialize Flask app
@@ -150,7 +151,15 @@ def admin_dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     stats = get_download_stats()
-    return render_template('admin.html', stats=stats)
+    generated_files_stats = get_generated_files_stats()
+    return render_template('admin.html', stats=stats, generated_files_stats=generated_files_stats)
+
+@app.route('/admin/download_log')
+def download_log():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    log_file_path = get_log_file_path()
+    return send_file(log_file_path, as_attachment=True, download_name='certificate_downloads.xlsx')
 
 @app.route('/api/refresh_data', methods=['POST'])
 def api_refresh_data():

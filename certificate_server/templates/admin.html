@@ -1,18 +1,31 @@
 <div id="admin-dashboard">
-    <a href="{{ url_for('admin_logout') }}" class="button">Logout</a>
     <h1>Admin Dashboard</h1>
+    <a href="{{ url_for('admin_logout') }}" class="button">Logout</a>
     
     <div class="card">
         <h2>Certificate Download Statistics</h2>
         <p>Total Downloads: {{ stats.total_downloads }}</p>
         <p>Unique Students: {{ stats.unique_students }}</p>
         <p>Downloads in Last 7 Days: {{ stats.recent_downloads }}</p>
+        <a href="{{ url_for('download_log') }}" class="button">Download Log File</a>
     </div>
 
     <div class="card">
         <h2>Data Management</h2>
         <button class="button" onclick="refreshData()">Refresh Data</button>
         <button class="button" onclick="toggleCaching()">Toggle Caching</button>
+    </div>
+
+    <div class="card">
+        <h2>Generated Files Statistics</h2>
+        <p>Total Files: {{ generated_files_stats.file_count }}</p>
+        <p>Total Size: {{ generated_files_stats.total_size_formatted }}</p>
+        <h3>File Details:</h3>
+        <ul>
+            {% for file in generated_files_stats.files %}
+            <li>{{ file.name }} - {{ file.size_formatted }}</li>
+            {% endfor %}
+        </ul>
     </div>
 
     <div id="message" class="callout" style="display: none;"></div>
@@ -54,6 +67,10 @@
         .error {
             background-color: #f8d7da;
             color: #721c24;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
         }
     </style>
 

@@ -2,12 +2,13 @@ import os
 import pandas as pd
 import joblib
 import logging
-from flask import jsonify
+from flask import jsonify, send_file
 
 CACHE_FILE = 'data_cache.joblib'
 EXCEL_FILE = 'file.xlsx'
 CACHE_CONFIG_FILE = 'cache_config.joblib'
 DOWNLOAD_LOG_FILE = 'certificate_downloads.xlsx'
+GENERATED_FILES_DIR = 'generated_files'
 
 def get_cache_status():
     if os.path.exists(CACHE_CONFIG_FILE):
@@ -61,3 +62,37 @@ def get_download_stats():
             "unique_students": 0,
             "recent_downloads": 0
         }
+
+def get_log_file_path():
+    return os.path.abspath(DOWNLOAD_LOG_FILE)
+
+def get_generated_files_stats():
+    stats = {
+        'file_count': 0,
+        'total_size': 0,
+        'files': []
+    }
+    
+    for filename in os.listdir(GENERATED_FILES_DIR):
+        file_path = os.path.join(GENERATED_FILES_DIR, filename)
+        if os.path.isfile(file_path):
+            file_size = os.path.getsize(file_path)
+            stats['file_count'] += 1
+            stats['total_size'] += file_size
+            stats['files'].append({
+                'name': filename,
+                'size': file_size
+            })
+    
+    stats['total_size_formatted'] = format_size(stats['total_size'])
+    for file in stats['files']:
+        file['size_formatted'] = format_size(file['size'])
+    
+    return stats
+
+def format_size(size_in_bytes):
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_in_bytes < 1024.0:
+            return f"{size_in_bytes:.2f} {unit}"
+        size_in_bytes /= 1024.0
+    return f"{size_in_bytes:.2f} TB"
