@@ -119,23 +119,25 @@ def add_remark(student_id, new_remark):
     conn.close()
 
 def get_download_stats():
-    conn = get_db_connection()
-    cur = conn.cursor(dictionary=True)
-    
-    cur.execute("""
-    SELECT 
-        COUNT(*) as total_downloads,
-        COUNT(DISTINCT student_id) as unique_students,
-        SUM(CASE WHEN remark LIKE '%Certificate downloaded on%' 
-                  AND STR_TO_DATE(SUBSTRING_INDEX(SUBSTRING_INDEX(remark, 'Certificate downloaded on ', -1), '\n', 1), '%Y-%m-%d %H:%i:%s') > DATE_SUB(NOW(), INTERVAL 7 DAY) 
-            THEN 1 ELSE 0 END) as recent_downloads
-    FROM students
-    WHERE remark LIKE '%Certificate downloaded on%'
-    """)
-    
-    result = cur.fetchone()
-    
-    cur.close()
-    conn.close()
-    
-    return result
+#Turned off due to cybersecurity concerns
+#    conn = get_db_connection()
+#    cur = conn.cursor(dictionary=True)
+#    
+#    cur.execute("""
+#    SELECT 
+#        COUNT(*) as total_downloads,
+#        COUNT(DISTINCT student_id) as unique_students,
+#        SUM(CASE WHEN remark LIKE '%Certificate downloaded on%' 
+#                  AND STR_TO_DATE(SUBSTRING_INDEX(SUBSTRING_INDEX(remark, 'Certificate downloaded on ', -1), '\n', 1), '%Y-%m-%d %H:%i:%s') > DATE_SUB(NOW(), INTERVAL 7 DAY) 
+#            THEN 1 ELSE 0 END) as recent_downloads
+#    FROM students
+#    WHERE remark LIKE '%Certificate downloaded on%'
+#    """)
+#    
+#    result = cur.fetchone()
+#    
+#   cur.close()
+#    conn.close()
+#    
+#    return result
+    return 0
