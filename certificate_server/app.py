@@ -2,13 +2,11 @@ from flask import Flask, request, jsonify, send_file, render_template, url_for, 
 from flask_cors import CORS
 import os
 import logging
-import pandas as pd
 from werkzeug.middleware.proxy_fix import ProxyFix
 from certificate_generator import generate_certificate
-from datetime import datetime
-from admin_functions import (load_data, refresh_data, toggle_caching, get_download_stats, 
-                             get_log_file_path, get_generated_files_stats)
 from config import ADMIN_PASSWORD, SECRET_KEY
+from database import (get_person, get_all_students, create_students_table, import_excel_to_db,
+                      log_certificate_download, add_remark, get_download_stats)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -20,13 +18,6 @@ CORS(app)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-# Load the DataFrame
-try:
-    df = pd.read_excel('file.xlsx')
-except Exception as e:
-    logging.error(f"Error loading Excel file: {str(e)}")
-    df = None
 
 # Set up template directory
 template_dir = os.path.abspath(os.path.dirname(__file__))
@@ -48,21 +39,6 @@ def obfuscate_phone(phone):
     phone = str(phone)  # Convert to string in case it's stored as a number
     return f"{'*' * (len(phone) - 4)}{phone[-4:]}"
 
-def log_certificate_download(student_id):
-    log_file = 'certificate_downloads.xlsx'
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    if os.path.exists(log_file):
-        log_df = pd.read_excel(log_file)
-    else:
-        log_df = pd.DataFrame(columns=['Timestamp', 'Student ID'])
-    
-    new_row = pd.DataFrame({'Timestamp': [timestamp], 'Student ID': [student_id]})
-    log_df = pd.concat([log_df, new_row], ignore_index=True)
-    
-    log_df.to_excel(log_file, index=False)
-    logging.info(f"Logged certificate download for student ID: {student_id}")
-
 @app.route('/')
 def home():
     try:
@@ -76,35 +52,25 @@ def favicon():
     return '', 204
 
 @app.route('/api/person', methods=['GET'])
-def get_person():
+def get_person_api():
     search_term = request.args.get('search')
     logging.info(f"Searching for: {search_term}")
     
-    if df is None:
-        return jsonify({"error": "Database not available"}), 500
-
-    # Search in student_id, full_name, and Email columns
-    person = df[
-        (df['student_id'].astype(str).str.lower() == search_term.lower()) |
-        (df['full_name'].str.lower() == search_term.lower()) |
-        (df['Email'].str.lower() == search_term.lower())
-    ]
+    person = get_person(search_term)
     
-    if person.empty:
+    if not person:
         logging.info(f"No person found for search term: {search_term}")
         return jsonify({"error": "Person not found"}), 404
     
-    person_data = person.iloc[0].to_dict()
-    
     # Obfuscate sensitive information
-    person_data['Email'] = obfuscate_email(person_data['Email'])
-    person_data['phone_no'] = obfuscate_phone(person_data['phone_no'])
+    person['Email'] = obfuscate_email(person['Email'])
+    person['phone_no'] = obfuscate_phone(person['phone_no'])
     
     # Add certificate download link
-    person_data['certificate_link'] = url_for('get_certificate', student_id=person_data['student_id'])
+    person['certificate_link'] = url_for('get_certificate', student_id=person['student_id'])
     
-    logging.info(f"Person found: {person_data}")
-    return jsonify(person_data)
+    logging.info(f"Person found: {person}")
+    return jsonify(person)
 
 @app.route('/api/certificate/<student_id>', methods=['GET'])
 def get_certificate(student_id):
@@ -113,11 +79,11 @@ def get_certificate(student_id):
     
     if not os.path.exists(pdf_path):
         # Create certificate if it doesn't exist
-        person = df[df['student_id'].astype(str) == str(student_id)]
-        if person.empty:
+        person = get_person(student_id)
+        if not person:
             return jsonify({"error": "Person not found"}), 404
         
-        student_name = person.iloc[0]['full_name']
+        student_name = person['full_name']
         pdf_path = generate_certificate(student_name, str(student_id))
         
         if pdf_path is None:
@@ -127,8 +93,6 @@ def get_certificate(student_id):
     log_certificate_download(student_id)
 
     return send_file(pdf_path, as_attachment=True, download_name=f"certificate_{student_id}.pdf", mimetype='application/pdf')
-
-# ... (admin routes)
 
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
@@ -151,31 +115,38 @@ def admin_dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     stats = get_download_stats()
-    generated_files_stats = get_generated_files_stats()
-    return render_template('admin.html', stats=stats, generated_files_stats=generated_files_stats)
-
-@app.route('/admin/download_log')
-def download_log():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    log_file_path = get_log_file_path()
-    return send_file(log_file_path, as_attachment=True, download_name='certificate_downloads.xlsx')
+    return render_template('admin.html', stats=stats)
 
 @app.route('/api/refresh_data', methods=['POST'])
 def api_refresh_data():
     if not session.get('admin_logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
-    return refresh_data()
+    try:
+        create_students_table()
+        import_excel_to_db('file.xlsx')
+        return jsonify({"message": "Data refreshed successfully"}), 200
+    except Exception as e:
+        logging.error(f"Error refreshing data: {str(e)}")
+        return jsonify({"error": "Failed to refresh data"}), 500
 
-@app.route('/api/toggle_caching', methods=['POST'])
-def api_toggle_caching():
+@app.route('/api/add_remark', methods=['POST'])
+def api_add_remark():
     if not session.get('admin_logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
-    return toggle_caching()
-
-
-# ... (admin routes)
-
+    
+    data = request.json
+    student_id = data.get('student_id')
+    new_remark = data.get('remark')
+    
+    if not student_id or not new_remark:
+        return jsonify({"error": "Missing student_id or remark"}), 400
+    
+    try:
+        add_remark(student_id, new_remark)
+        return jsonify({"message": "Remark added successfully"}), 200
+    except Exception as e:
+        logging.error(f"Error adding remark: {str(e)}")
+        return jsonify({"error": "Failed to add remark"}), 500
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -192,6 +163,13 @@ if __name__ == '__main__':
         # Check if template exists
         if not os.path.exists(os.path.join(app.template_folder, 'index.html')):
             raise FileNotFoundError("index.html template not found in templates directory")
+        
+        # Create students table if it doesn't exist
+        create_students_table()
+        
+        # Import data from Excel file if the table is empty
+        if len(get_all_students()) == 0:
+            import_excel_to_db('file.xlsx')
         
         app.run(host='0.0.0.0', port=5000)
     except Exception as e:
