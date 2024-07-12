@@ -28,7 +28,7 @@ def generate_certificate(student_name, student_id):
         cv2.imwrite(f"{output_dir}/{student_id}.jpg", certificate_template_image)
 
         # QR code generation
-        url = "https://verify.cpcglobal.org#"
+        url = "https://cpcglobal.org/verify#"
         qr = qrcode.QRCode(version=4, error_correction=qrcode.constants.ERROR_CORRECT_H)
         qr.add_data(f"{url}{student_id}")
         qr.make(fit=True)

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Verification</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #verifiedName {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Verification</h1>
+        <div id="verifiedName"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                $.ajax({
+                    url: `/api/verify/${hash}`,
+                    method: 'GET',
+                    success: function(data) {
+                        $('#verifiedName').text(`Verified Student: ${data.full_name}`);
+                    },
+                    error: function() {
+                        $('#verifiedName').text('Student not found or verification failed.');
+                    }
+                });
+            } else {
+                $('#verifiedName').text('No student ID provided.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -47,6 +47,10 @@ def home():
         logging.error(f"Error rendering template: {str(e)}")
         return jsonify({"error": "Failed to render template"}), 500
 
+@app.route('/verify')
+def verify_page():
+    return render_template('verify.html')
+
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
@@ -93,6 +97,16 @@ def get_certificate(student_id):
     log_certificate_download(student_id)
 
     return send_file(pdf_path, as_attachment=True, download_name=f"certificate_{student_id}.pdf", mimetype='application/pdf')
+
+@app.route('/api/verify/<student_id>', methods=['GET'])
+def verify_student(student_id):
+    person = get_person(student_id)
+    
+    if not person:
+        return jsonify({"error": "Student not found"}), 404
+    
+    return jsonify({"full_name": person['full_name']})
+
 
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
