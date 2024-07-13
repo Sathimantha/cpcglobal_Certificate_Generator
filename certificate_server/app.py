@@ -1,12 +1,11 @@
-from flask import Flask, request, jsonify, send_file, render_template, url_for, session, redirect
+from flask import Flask, request, jsonify, send_file, render_template, url_for
 from flask_cors import CORS
 import os
 import logging
 from werkzeug.middleware.proxy_fix import ProxyFix
 from certificate_generator import generate_certificate
-from config import ADMIN_PASSWORD, SECRET_KEY
-from database import (get_person, get_all_students, create_students_table, import_excel_to_db,
-                      log_certificate_download, add_remark, get_download_stats)
+from config import SECRET_KEY
+from database import get_person, log_certificate_download
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -107,61 +106,6 @@ def verify_student(student_id):
     
     return jsonify({"full_name": person['full_name']})
 
-
-@app.route('/admin_login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        password = request.form.get('password')
-        if password == ADMIN_PASSWORD:
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return render_template('admin_login.html', error="Invalid password")
-    return render_template('admin_login.html')
-
-@app.route('/admin_logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('admin_login'))
-
-@app.route('/admin')
-def admin_dashboard():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    stats = get_download_stats()
-    return render_template('admin.html', stats=stats)
-
-@app.route('/api/refresh_data', methods=['POST'])
-def api_refresh_data():
-    if not session.get('admin_logged_in'):
-        return jsonify({"error": "Unauthorized"}), 401
-    try:
-        create_students_table()
-        import_excel_to_db('file.xlsx')
-        return jsonify({"message": "Data refreshed successfully"}), 200
-    except Exception as e:
-        logging.error(f"Error refreshing data: {str(e)}")
-        return jsonify({"error": "Failed to refresh data"}), 500
-
-@app.route('/api/add_remark', methods=['POST'])
-def api_add_remark():
-    if not session.get('admin_logged_in'):
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    data = request.json
-    student_id = data.get('student_id')
-    new_remark = data.get('remark')
-    
-    if not student_id or not new_remark:
-        return jsonify({"error": "Missing student_id or remark"}), 400
-    
-    try:
-        add_remark(student_id, new_remark)
-        return jsonify({"message": "Remark added successfully"}), 200
-    except Exception as e:
-        logging.error(f"Error adding remark: {str(e)}")
-        return jsonify({"error": "Failed to add remark"}), 500
-
 @app.errorhandler(404)
 def not_found_error(error):
     logging.info(f"404 Error: {request.url}")
@@ -177,13 +121,6 @@ if __name__ == '__main__':
         # Check if template exists
         if not os.path.exists(os.path.join(app.template_folder, 'index.html')):
             raise FileNotFoundError("index.html template not found in templates directory")
-        
-        # Create students table if it doesn't exist
-        create_students_table()
-        
-        # Import data from Excel file if the table is empty
-        if len(get_all_students()) == 0:
-            import_excel_to_db('file.xlsx')
         
         app.run(host='0.0.0.0', port=5000)
     except Exception as e:

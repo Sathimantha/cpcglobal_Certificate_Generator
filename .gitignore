@@ -1,6 +1,4 @@
+scrap.txt
 certificate_server/generated_files/*
 certificate_server/__pycache__
-scrap.txt
-certificate_server/certificate_downloads.xlsx
-certificate_server/data_cache.joblib
-certificate_server/cache_config.joblib 
+ 
