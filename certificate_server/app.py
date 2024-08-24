@@ -23,14 +23,10 @@ template_dir = os.path.abspath(os.path.dirname(__file__))
 template_dir = os.path.join(template_dir, 'templates')
 app.template_folder = template_dir
 
-def obfuscate_email(email):
-    if not email:
+def obfuscate_nid(nid):
+    if not nid:
         return ""
-    parts = email.split('@')
-    if len(parts) != 2:
-        return email  # Return original if it's not a valid email
-    username, domain = parts
-    return f"{username[:3]}{'*' * (len(username) - 3)}@{domain}"
+    return f"{'*' * (len(nid) - 4)}{nid[-4:]}"
 
 def obfuscate_phone(phone):
     if not phone:
@@ -66,7 +62,7 @@ def get_person_api():
         return jsonify({"error": "Person not found"}), 404
     
     # Obfuscate sensitive information
-    person['Email'] = obfuscate_email(person['Email'])
+    person['NID'] = obfuscate_nid(person['NID'])
     person['phone_no'] = obfuscate_phone(person['phone_no'])
     
     # Add certificate download link
