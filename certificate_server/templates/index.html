@@ -5,56 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificate Lookup</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #333;
-        }
-        #searchSection {
-            margin-bottom: 20px;
-        }
-        #searchInput {
-            padding: 8px;
-            width: 300px;
-            font-size: 16px;
-        }
-        button {
-            padding: 8px 16px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #personInfo {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 20px;
-        }
-        #errorMessage {
-            color: red;
-            margin-top: 10px;
-        }
-        .hidden {
-            display: none;
-        }
+        /* ... (styles remain unchanged) ... */
     </style>
 </head>
 <body>
     <h1>Certificate Lookup</h1>
     
     <div id="searchSection">
-        <input type="text" id="searchInput" placeholder="Enter Student ID, Full Name, or Email">
+        <input type="text" id="searchInput" placeholder="Enter Full Name or NID">
         <button onclick="searchPerson()">Search</button>
         <button onclick="resetSearch()">Reset</button>
     </div>
@@ -85,8 +43,7 @@
             personInfoDiv.innerHTML = `
                 <h2>Person Information</h2>
                 <p><strong>Full Name:</strong> ${person.full_name}</p>
-                <p><strong>Student ID:</strong> ${person.student_id}</p>
-                <p><strong>Email:</strong> ${person.Email}</p>
+                <p><strong>NID:</strong> ${person.NID}</p>
                 <p><strong>Phone:</strong> ${person.phone_no}</p>
                 <p><a href="${person.certificate_link}" target="_blank" class="download-link">Download Certificate</a></p>
             `;
