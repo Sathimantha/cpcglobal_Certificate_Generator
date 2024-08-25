@@ -20,7 +20,25 @@ def generate_certificate(student_name, student_id):
             logging.error(f"Failed to load certificate template from {template_path}")
             return None
 
-        cv2.putText(certificate_template_image, student_name, (800, 2420), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 0, 250), 5, cv2.LINE_AA)
+        # Get the width of the certificate template
+        img_width = certificate_template_image.shape[1]
+
+        #font size based on name length
+        if len(student_name)<54:
+            font_scale = 4.2
+        else:
+            font_scale=2.5
+
+        # Calculate the center position for the text
+        text = student_name
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        
+        font_thickness = 5
+        text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+        text_x = (img_width - text_size[0]) // 2
+
+        # Put the centered text on the certificate
+        cv2.putText(certificate_template_image, student_name, (text_x, 3000), font, font_scale, (0, 0, 250), font_thickness, cv2.LINE_AA)
         
         output_dir = "generated_files"
         os.makedirs(output_dir, exist_ok=True)
@@ -32,7 +50,7 @@ def generate_certificate(student_name, student_id):
         qr = qrcode.QRCode(version=4, error_correction=qrcode.constants.ERROR_CORRECT_H)
         qr.add_data(f"{url}{student_id}")
         qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="transparent")
+        img = qr.make_image(fill_color="white", back_color="transparent")
         img.save(f"{output_dir}/{student_id}_qr.png")
 
         # Paste QR code onto certificate
