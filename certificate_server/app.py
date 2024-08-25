@@ -100,7 +100,12 @@ def verify_student(student_id):
     if not person:
         return jsonify({"error": "Student not found"}), 404
     
-    return jsonify({"full_name": person['full_name']})
+    return jsonify({
+        "full_name": person['full_name'],
+        "NID": person['NID']  # This line adds the NID to the response
+        # If you want to obfuscate NID, replace the above line with:
+        # "NID": obfuscate_nid(person['NID'])
+    })
 
 @app.errorhandler(404)
 def not_found_error(error):
